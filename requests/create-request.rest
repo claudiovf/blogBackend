@@ -1,0 +1,13 @@
+
+
+# POST http://localhost:3003/api/blogs
+# Content-Type: application/json
+
+# {
+#     "title": "F1 blog",
+#     "author": "Max Ver",
+#     "url": "http://bbc.com",
+#     "likes": 1322
+# }
+
+GET http://localhost:3003/api/blogs

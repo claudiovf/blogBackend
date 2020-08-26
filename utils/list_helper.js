@@ -1,5 +1,6 @@
 const _ = require('lodash')
 
+
 const totalLikes = blogs => {
     if (blogs.length === 0) {
         return 0

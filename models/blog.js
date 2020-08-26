@@ -2,10 +2,12 @@ const mongoose = require('mongoose')
 
 mongoose.set('useFindAndModify', false)
 
+
 const blogSchema = new mongoose.Schema({
     title: {
         type: String,
-        required: true
+        required: true,
+        unique: true
     },
     author: {
         type: String,

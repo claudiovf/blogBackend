@@ -1,5 +1,112 @@
+const mongoose = require('mongoose')
+const supertest = require('supertest')
+const app = require('../app')
+
+const api = supertest(app)
+
 const listHelper = require('../utils/list_helper')
-const blogsRouter = require('../controllers/blogs')
+
+
+test('total blog count as json', async () => {
+    const blogs = await api
+        .get('/api/blogs')
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+        
+        expect(blogs.body.length).toBe(9)
+
+}, 10000)
+
+
+test('id is named id', async () => {
+    const blogs = await api
+        .get('/api/blogs')
+
+
+    blogs.body.forEach(el => {
+        expect(el.id).toBeDefined()
+    });
+
+}, 10000)
+
+test('new blog is saved', async () => {
+
+    const initial = await api.get('/api/blogs')
+
+    const newBlog = {
+        title: 'This Test Should Final ',
+        author: 'Cloud Var',
+        url: 'news.com.au',
+        likes: 19
+    }
+
+    await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+    const final = await api.get('/api/blogs')
+    expect(final.body.length).toBe(initial.body.length + 1)
+
+}, 20000)
+
+test('zero likes', async () => {
+    const newBlog = {
+        title: "ZERO LIKES",
+        author: 'Britt K',
+        url: 'bbc.com'
+    }
+
+    await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(201)
+    
+
+    const updatedList = await api.get('/api/blogs')
+    const blog = await updatedList.body.find(blog => blog.title === newBlog.title)
+
+    expect(blog.likes).toBe(0)
+
+        
+}, 20000)
+
+
+test('No Title and No URL returns 400 Bad Request', async () => {
+    const newBlog = {
+        author: 'Cloud Var',
+        url: 'bbc.com'
+    }
+
+    await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(400)
+
+}, 20000)
+
+test('Blog can be updated', async () => {
+    const id = "5f3622bd702228dd4163554a"
+
+    const newInfo = {
+        title: 'Updating Blogs Final',
+        // author: 'Changed again',
+        // url: 'news.com',
+        //likes: 30
+    }
+
+    await api
+        .put(`/api/blogs/${id}`)
+        .send(newInfo)
+        .expect(200)
+
+    const updatedBlogs = await api.get('/api/blogs')
+    const updatedBlog = await updatedBlogs.body.find(blog => blog.id === id)
+
+    expect(updatedBlog.likes).toBe(30)
+
+}, 20000)
 
 
 describe('Total likes', () => {
@@ -54,3 +161,5 @@ test('Most likes', () => {
         likes: 17
     })
 })
+
+afterAll(() => mongoose.connection.close())

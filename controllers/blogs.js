@@ -1,30 +1,42 @@
+const jwt = require('jsonwebtoken')
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
+const User = require('../models/user')
 
-blogsRouter.get('/', (req, res) => {
-    Blog
+blogsRouter.get('/', async (req, res) => {
+    const blogs = await Blog
         .find({})
-        .then(blogs => {
-            res.json(blogs)
-        })
+        .populate('user', { username: 1, name: 1 })
+    
+    res.json(blogs)
 })
 
-blogsRouter.post('/', (req, res) => {
+
+blogsRouter.post('/', async (req, res) => {
+
+    const decodedToken = jwt.verify(req.token, process.env.SECRET)
+    if(!decodedToken.id) {
+        return res.status(401).json({ error: 'token missing or invalid' })
+    }
+    const user = await User.findById(decodedToken.id)
+
     const blog = new Blog({
         title: req.body.title,
         author: req.body.author,
         url: req.body.url,
+        user: user._id,
         likes: req.body.likes || 0
     })
 
     if( !blog.title || !blog.url ) res.status(400).end()
+
     else {
-        blog
-            .save()
-            .then(retBlog => retBlog.toJSON())
-            .then(formatted => {
-                res.status(201).json(formatted)
-            })
+        const savedBlog = await blog.save()
+        
+        user.blogs = user.blogs.concat(savedBlog._id)
+        await user.save()
+
+        res.json(savedBlog.toJSON())
     }
 })
 
@@ -36,6 +48,19 @@ blogsRouter.get('/:id', async (req, res) => {
 })
 
 blogsRouter.delete('/:id', async (req, res) => {
+
+    const decodedToken = jwt.verify(req.token, process.env.SECRET)
+    if (!decodedToken.id) {
+        return res.status(401).json({ error: 'token missing or invalid'})
+    }
+
+    const blog = await Blog.findById(req.params.id)
+    console.log(decodedToken.id, blog.user)
+
+    if(decodedToken.id.toString() !== blog.user.toString()) {
+        return res.status(401).json({ error: 'Not original publisher' })
+    } 
+
     await Blog.findByIdAndRemove(req.params.id)
     res.status(204).end()
 })

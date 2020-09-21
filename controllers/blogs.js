@@ -28,7 +28,7 @@ blogsRouter.post('/', async (req, res) => {
         likes: req.body.likes || 0
     })
 
-    if( !blog.title || !blog.url ) res.status(400).end()
+    if( !blog.title || !blog.url ) res.status(400).send({ error: 'title or url missing'})
 
     else {
         const savedBlog = await blog.save()
@@ -73,7 +73,8 @@ blogsRouter.put('/:id', async (req, res) => {
         title: req.body.title || oldBlog.title,
         author: req.body.author || oldBlog.author,
         url: req.body.url || oldBlog.url,
-        likes: req.body.likes || oldBlog.likes
+        likes: req.body.likes || oldBlog.likes,
+        user: req.body.user || oldBlog.user
     }
     const updatedBlog = await Blog.findByIdAndUpdate(req.params.id, blog, { new: true })
     res.json(updatedBlog)
